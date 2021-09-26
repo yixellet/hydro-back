@@ -1,0 +1,27 @@
+{
+  "name": "hydro-back",
+  "version": "0.1.0",
+  "description": "API for gauges project",
+  "main": "app.js",
+  "scripts": {
+    "dev": "nodemon app.js",
+    "start": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yixellet/hydro-back.git"
+  },
+  "author": "OWGrant",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yixellet/hydro-back/issues"
+  },
+  "homepage": "https://github.com/yixellet/hydro-back#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1",
+    "nodemon": "^2.0.13",
+    "pg-promise": "^10.11.0"
+  }
+}
