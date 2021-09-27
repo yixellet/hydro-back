@@ -13,7 +13,7 @@ const db = pgp(`postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_
 
 function getGauges(req, res) {
   const query = new ParameterizedQuery({
-    text: 'SELECT id, name FROM hydro.gauges WHERE type = $1 ORDER BY name', 
+    text: 'SELECT id, name FROM hydro.gauges WHERE type = $1 ORDER BY name',
     values: ['gauge']
   });
 
@@ -36,16 +36,16 @@ function getSingleGauge(req, res) {
            ST_X(geom) AS lon, \
            ST_Y(geom) AS lat \
            FROM hydro.gauges \
-           WHERE gauges.id = $1', 
+           WHERE gauges.id = $1',
     values: [req.params.id]
   });
 
   db.one(query)
     .then((data) => {
       const elevs = new ParameterizedQuery({
-        text: 'SELECT elev, \"startDate\", \"endDate\" \
-               FROM hydro.\"refElevs\" \
-               WHERE \"gaugeUUID\" = $1',
+        text: 'SELECT elevation, \"startDate\", \"endDate\" \
+               FROM hydro.\"ref_elevations\" \
+               WHERE \"gauge\" = $1',
         values: [data.uuid]
       })
       db.any(elevs)
@@ -69,8 +69,8 @@ function getSingleGauge(req, res) {
 function getFullYearObservations(req, res) {
   const query = new ParameterizedQuery({
     text: `SELECT * \
-           FROM hydro.\"${req.query.code}"\
-           WHERE date_part(\'year\', \"${req.query.code}\".date) = $1`, 
+           FROM hydro.\"${req.query.code}test"\
+           WHERE date_part(\'year\', \"${req.query.code}test\".date) = $1 ORDER BY \"${req.query.code}test\".date`,
     values: [req.query.year]
   });
 
