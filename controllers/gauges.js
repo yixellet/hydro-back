@@ -69,8 +69,8 @@ function getSingleGauge(req, res) {
 function getFullYearObservations(req, res) {
   const query = new ParameterizedQuery({
     text: `SELECT * \
-           FROM hydro.\"${req.query.code}test"\
-           WHERE date_part(\'year\', \"${req.query.code}test\".date) = $1 ORDER BY \"${req.query.code}test\".date`,
+           FROM hydro.\"${req.query.code}stage"\
+           WHERE date_part(\'year\', \"${req.query.code}stage\".date) = $1 ORDER BY \"${req.query.code}stage\".date`,
     values: [req.query.year]
   });
 
