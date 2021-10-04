@@ -69,18 +69,40 @@ function getSingleGauge(req, res) {
 function getFullYearObservations(req, res) {
   const query = new ParameterizedQuery({
     text: `SELECT * \
-           FROM hydro.\"${req.query.code}stage"\
-           WHERE date_part(\'year\', \"${req.query.code}stage\".date) = $1 ORDER BY \"${req.query.code}stage\".date`,
+           FROM hydro.\"${req.query.code}abs"\
+           WHERE date_part(\'year\', \"${req.query.code}abs\".date) = $1 ORDER BY \"${req.query.code}abs\".date`,
     values: [req.query.year]
   });
 
   db.any(query)
     .then((data) => {
-      res.send(data)
+      res.send({data});
+    })
+    .catch((error) => {
+      res.send({error});
+    });
+};
+
+function getSingleObservation(req, res) {
+  const query = new ParameterizedQuery({
+    text: `SELECT * \
+           FROM hydro.\"${req.query.code}abs"\
+           WHERE date=$1`,
+    values: [req.query.date]
+  });
+
+  db.one(query)
+    .then((data) => {
+      res.send({data});
     })
     .catch((error) => {
       res.send({error});
     });
 }
 
-module.exports = {getGauges, getSingleGauge, getFullYearObservations};
+module.exports = {
+  getGauges,
+  getSingleGauge,
+  getFullYearObservations,
+  getSingleObservation
+};
