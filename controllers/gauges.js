@@ -13,7 +13,9 @@ const db = pgp(`postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_
 
 function getGauges(req, res) {
   const query = new ParameterizedQuery({
-    text: 'SELECT id, name FROM hydro.gauges WHERE type = $1 ORDER BY name',
+    text: 'SELECT id, name, \
+          ST_X(geom) AS lon, \
+          ST_Y(geom) AS lat \ FROM hydro.gauges WHERE type = $1 ORDER BY name',
     values: ['gauge']
   });
 
