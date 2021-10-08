@@ -69,15 +69,39 @@ function getSingleGauge(req, res) {
 };
 
 function getFullYearObservations(req, res) {
-  const query = new ParameterizedQuery({
+  const obsQuery = new ParameterizedQuery({
     text: `SELECT * \
-           FROM hydro.\"${req.query.code}abs"\
-           WHERE date_part(\'year\', \"${req.query.code}abs\".date) = $1 ORDER BY \"${req.query.code}abs\".date`,
+           FROM hydro."${req.query.code}abs"\
+           WHERE date_part(\'year\', "${req.query.code}abs".date) \
+           = $1 ORDER BY \"${req.query.code}abs\".date`,
     values: [req.query.year]
   });
 
-  db.any(query)
-    .then((data) => {
+  const legendQuery = new ParameterizedQuery({ text: `SELECT * FROM hydro.legend` })
+  let legendArr
+  db.any(legendQuery)
+    .then((legend) => {
+      legendArr = legend
+    })
+
+  db.any(obsQuery)
+    .then((observations) => {
+      const data = []
+      observations.forEach((observation) => {
+        const newObs = {
+          date: observation.date,
+          stage: observation.state,
+          props: []
+        }
+        observation.properties.forEach((prop) => {
+          legendArr.forEach((legendItem) => {
+            if (legendItem.uuid === prop) {
+              newObs.props.push(legendItem)
+            }
+          })
+        })
+        data.push(newObs)
+      })
       res.send({data});
     })
     .catch((error) => {
@@ -88,7 +112,7 @@ function getFullYearObservations(req, res) {
 function getSingleObservation(req, res) {
   const query = new ParameterizedQuery({
     text: `SELECT * \
-           FROM hydro.\"${req.query.code}abs"\
+           FROM hydro."${req.query.code}abs"\
            WHERE date=$1`,
     values: [req.query.date]
   });
@@ -102,9 +126,23 @@ function getSingleObservation(req, res) {
     });
 }
 
+function getObsCount(req, res) {
+  const query = new ParameterizedQuery({
+    text: `SELECT * FROM hydro.count_obs(\'${req.query.code}abs\')`
+  });
+  db.any(query)
+    .then((data) => {
+      res.send({data})
+    })
+    .catch((error) => {
+      res.send({error})
+    })
+}
+
 module.exports = {
   getGauges,
   getSingleGauge,
   getFullYearObservations,
-  getSingleObservation
+  getSingleObservation,
+  getObsCount
 };
