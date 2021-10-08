@@ -47,7 +47,8 @@ function getSingleGauge(req, res) {
       const elevs = new ParameterizedQuery({
         text: 'SELECT elevation, \"startDate\", \"endDate\" \
                FROM hydro.\"ref_elevations\" \
-               WHERE \"gauge\" = $1',
+               WHERE \"gauge\" = $1 \
+               ORDER BY \"startDate\" DESC',
         values: [data.uuid]
       })
       db.any(elevs)
