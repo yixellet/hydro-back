@@ -6,7 +6,7 @@ const {getGauges,
        getObsCount} = require('../controllers/gauges');
 
 router.get('/gauges', getGauges);
-router.get('/gauges/:id', getSingleGauge);
+router.get('/gauges/:code', getSingleGauge);
 router.get('/obs', getFullYearObservations);
 router.get('/singleobs', getSingleObservation);
 router.get('/count', getObsCount)
