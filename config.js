@@ -3,7 +3,7 @@ const DB_PORT = 5432;
 const DB_USER = 'postgres';
 const DB_PASSWORD = '07071907';
 const DB_NAME = 'geodata';
-const DB_SCHEMA = 'hydro';
+const DB_SCHEMA = 'gauges';
 const { PORT = 4000 } = process.env;
 
 module.exports = {

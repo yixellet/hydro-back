@@ -1,4 +1,3 @@
-
 const pgp = require('pg-promise')();
 const { ParameterizedQuery } = require('pg-promise');
 
@@ -7,17 +6,17 @@ const {
   DB_PORT,
   DB_USER,
   DB_PASSWORD,
-  DB_NAME, } = require('../config');
+  DB_NAME,
+  DB_SCHEMA } = require('../config');
 
 const db = pgp(`postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}`);
 
 function getGauges(req, res) {
   const query = new ParameterizedQuery({
-    text: 'SELECT id, name, \
+    text: `SELECT uuid, name, \
           ST_X(geom) AS lon, \
-          ST_Y(geom) AS lat \ FROM hydro.gauges WHERE type = $1 ORDER BY name',
-    values: ['gauge']
-  });
+          ST_Y(geom) AS lat FROM ${DB_SCHEMA}.gauges ORDER BY name`
+        });
 
   db.any(query)
     .then((data) => {
@@ -30,25 +29,24 @@ function getGauges(req, res) {
 
 function getSingleGauge(req, res) {
   const query = new ParameterizedQuery({
-    text: 'SELECT gauges.id, \
-           gauges.uuid, \
+    text: `SELECT gauges.uuid, \
            gauges.code, \
            gauges.name, \
-           gauges.stream, \
+           gauges.river, \
            ST_X(geom) AS lon, \
            ST_Y(geom) AS lat \
-           FROM hydro.gauges \
-           WHERE gauges.id = $1',
-    values: [req.params.id]
+           FROM ${DB_SCHEMA}.gauges \
+           WHERE gauges.code = $1`,
+    values: [req.params.code]
   });
 
   db.one(query)
     .then((data) => {
       const elevs = new ParameterizedQuery({
-        text: 'SELECT elevation, \"startDate\", \"endDate\" \
-               FROM hydro.\"ref_elevations\" \
+        text: `SELECT elev, \"startDate\", \"endDate\" \
+               FROM ${DB_SCHEMA}.\"ref_elevations\" \
                WHERE \"gauge\" = $1 \
-               ORDER BY \"startDate\" DESC',
+               ORDER BY \"startDate\" DESC`,
         values: [data.uuid]
       })
       db.any(elevs)
@@ -72,13 +70,13 @@ function getSingleGauge(req, res) {
 function getFullYearObservations(req, res) {
   const obsQuery = new ParameterizedQuery({
     text: `SELECT * \
-           FROM hydro."${req.query.code}abs"\
+           FROM ${DB_SCHEMA}."${req.query.code}abs"\
            WHERE date_part(\'year\', "${req.query.code}abs".date) \
            = $1 ORDER BY \"${req.query.code}abs\".date`,
     values: [req.query.year]
   });
 
-  const legendQuery = new ParameterizedQuery({ text: `SELECT * FROM hydro.legend` })
+  const legendQuery = new ParameterizedQuery({ text: `SELECT * FROM ${DB_SCHEMA}.legend` })
   let legendArr
   db.any(legendQuery)
     .then((legend) => {
@@ -91,10 +89,10 @@ function getFullYearObservations(req, res) {
       observations.forEach((observation) => {
         const newObs = {
           date: observation.date,
-          stage: observation.state,
+          stage: observation.stage,
           props: []
         }
-        observation.properties.forEach((prop) => {
+        observation.props.forEach((prop) => {
           legendArr.forEach((legendItem) => {
             if (legendItem.uuid === prop) {
               newObs.props.push(legendItem)
@@ -113,14 +111,33 @@ function getFullYearObservations(req, res) {
 function getSingleObservation(req, res) {
   const query = new ParameterizedQuery({
     text: `SELECT * \
-           FROM hydro."${req.query.code}abs"\
+           FROM ${DB_SCHEMA}."${req.query.code}abs"\
            WHERE date=$1`,
     values: [req.query.date]
   });
+  console.log(query)
+  const legendQuery = new ParameterizedQuery({ text: `SELECT * FROM ${DB_SCHEMA}.legend` })
+  let legendArr
+  db.any(legendQuery)
+    .then((legend) => {
+      legendArr = legend
+    })
 
   db.one(query)
-    .then((data) => {
-      res.send({data});
+    .then((singleObs) => {
+      const newObs = {
+        date: singleObs.date,
+        stage: singleObs.stage,
+        props: []
+      }
+      singleObs.props.forEach((prop) => {
+        legendArr.forEach((legendItem) => {
+          if (legendItem.uuid === prop) {
+            newObs.props.push(legendItem)
+          }
+        })
+      })
+      res.send(newObs);
     })
     .catch((error) => {
       res.send({error});
@@ -129,7 +146,7 @@ function getSingleObservation(req, res) {
 
 function getObsCount(req, res) {
   const query = new ParameterizedQuery({
-    text: `SELECT * FROM hydro.count_obs(\'${req.query.code}abs\')`
+    text: `SELECT * FROM ${DB_SCHEMA}.count_obs(\'${req.query.code}abs\') ORDER BY year`
   });
   db.any(query)
     .then((data) => {
