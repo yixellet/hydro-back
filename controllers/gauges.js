@@ -46,8 +46,8 @@ function getSingleGauge(req, res) {
                   gauges."calcMaxStage"(gauges.code) AS "maxStage",\
                   gauges."calcMinStage"(gauges.code) AS "minStage"\
             FROM ${DB_SCHEMA}.gauges\
-            JOIN ${DB_SCHEMA}."meanAnnualsGms" mag ON mag.gauge = gauges.uuid\
-            JOIN ${DB_SCHEMA}."maxStageProbGms" msp ON msp.gauge = gauges.uuid\
+            LEFT JOIN ${DB_SCHEMA}."meanAnnualsGms" mag ON mag.gauge = gauges.uuid\
+            LEFT JOIN ${DB_SCHEMA}."maxStageProbGms" msp ON msp.gauge = gauges.uuid\
             WHERE gauges.code = $1`,
     values: [req.params.code]
   });
@@ -55,9 +55,11 @@ function getSingleGauge(req, res) {
   db.one(query)
     .then((data) => {
       const elevs = new ParameterizedQuery({
-        text: `SELECT elev, \"startDate\", \"endDate\" \
-               FROM ${DB_SCHEMA}.\"ref_elevations\" \
-               WHERE \"gauge\" = $1 \
+        text: `SELECT elev,
+                  to_timestamp(to_char(\"startDate\", 'YYYY-mm-DD'), 'YYYY-mm-DD') AT TIME ZONE 'Europe/Astrakhan' AS \"startDate\",
+                  to_timestamp(to_char(\"endDate\", 'YYYY-mm-DD'), 'YYYY-mm-DD') AT TIME ZONE 'Europe/Astrakhan' AS \"endDate\"
+               FROM ${DB_SCHEMA}.\"ref_elevations\"
+               WHERE \"gauge\" = $1
                ORDER BY \"startDate\" DESC`,
         values: [data.uuid]
       });
@@ -91,10 +93,12 @@ function getSingleGauge(req, res) {
 
 function getFullYearObservations(req, res) {
   const obsQuery = new ParameterizedQuery({
-    text: `SELECT * \
-           FROM ${DB_SCHEMA}."${req.query.code}abs"\
-           WHERE date_part(\'year\', "${req.query.code}abs".date) \
-           = $1 ORDER BY \"${req.query.code}abs\".date`,
+    text: `SELECT to_timestamp(to_char(date, 'YYYY-mm-DD'), 'YYYY-mm-DD') AT TIME ZONE 'Europe/Astrakhan' AS date,
+                  stage,
+                  props
+           FROM ${DB_SCHEMA}."s${req.query.code}"\
+           WHERE date_part(\'year\', "s${req.query.code}".date) \
+           = $1 ORDER BY \"s${req.query.code}\".date`,
     values: [req.query.year]
   });
 
@@ -111,7 +115,7 @@ function getFullYearObservations(req, res) {
       observations.forEach((observation) => {
         const newObs = {
           date: observation.date,
-          stage: observation.stage,
+          stage: Number(observation.stage),
           props: []
         }
         observation.props.forEach((prop) => {
@@ -132,8 +136,10 @@ function getFullYearObservations(req, res) {
 
 function getSingleObservation(req, res) {
   const query = new ParameterizedQuery({
-    text: `SELECT * \
-           FROM ${DB_SCHEMA}."${req.query.code}abs"\
+    text: `SELECT to_timestamp(to_char(date, 'YYYY-mm-DD'), 'YYYY-mm-DD') AT TIME ZONE 'Europe/Astrakhan' AS date,
+                  stage,
+                  props
+           FROM ${DB_SCHEMA}."s${req.query.code}"\
            WHERE date=$1`,
     values: [req.query.date]
   });
@@ -167,7 +173,7 @@ function getSingleObservation(req, res) {
 
 function getObsCount(req, res) {
   const query = new ParameterizedQuery({
-    text: `SELECT * FROM ${DB_SCHEMA}.count_obs(\'${req.query.code}abs\') ORDER BY year`
+    text: `SELECT * FROM ${DB_SCHEMA}.count_obs(\'${req.query.code}\') ORDER BY year`
   });
   db.any(query)
     .then((data) => {
