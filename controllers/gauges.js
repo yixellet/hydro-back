@@ -29,25 +29,29 @@ function getGauges(req, res) {
 
 function getSingleGauge(req, res) {
   const query = new ParameterizedQuery({
-    text: `SELECT gauges.uuid,\
-                  gauges.code, \
-                  gauges.name, \
-                  gauges.river, \
-                  ST_X(gauges.geom) AS lon, \
-                  ST_Y(gauges.geom) AS lat,\
-                  mag."allPeriod" AS "meanAnnualAllPeriod_GMS",\
-                  mag."iceFree" AS "meanAnnualIceFree_GMS",\
-                  msp."1p" AS "p1_GMS",\
-                  msp."3p" AS "p3_GMS",\
-                  msp."5p" AS "p5_GMS",\
-                  msp."10p" AS "p10_GMS",\
-                  msp."25p" AS "p25_GMS",\
-                  msp."50p" AS "p50_GMS",\
-                  gauges."calcMaxStage"(gauges.code) AS "maxStage",\
-                  gauges."calcMinStage"(gauges.code) AS "minStage"\
-            FROM ${DB_SCHEMA}.gauges\
-            LEFT JOIN ${DB_SCHEMA}."meanAnnualsGms" mag ON mag.gauge = gauges.uuid\
-            LEFT JOIN ${DB_SCHEMA}."maxStageProbGms" msp ON msp.gauge = gauges.uuid\
+    text: `SELECT gauges.uuid,
+                  gauges.code,
+                  gauges.name,
+                  gauges.river,
+                  ST_X(gauges.geom) AS lon,
+                  ST_Y(gauges.geom) AS lat,
+                  mag."allPeriod" AS "meanAnnualAllPeriod_GMS",
+                  mag."iceFree" AS "meanAnnualIceFree_GMS",
+                  msp."1p" AS "p1_GMS",
+                  msp."3p" AS "p3_GMS",
+                  msp."5p" AS "p5_GMS",
+                  msp."10p" AS "p10_GMS",
+                  msp."25p" AS "p25_GMS",
+                  msp."50p" AS "p50_GMS",
+                  maxst.date AS "maxDate",
+                  maxst.stage AS "maxStage",
+                  minst.date AS "minDate",
+                  minst.stage AS "minStage"
+            FROM ${DB_SCHEMA}."calcMaxStage"($1) maxst,
+                 ${DB_SCHEMA}."calcMinStage"($1) minst,
+                 ${DB_SCHEMA}.gauges
+            LEFT JOIN ${DB_SCHEMA}."meanAnnualsGms" mag ON mag.gauge = gauges.uuid
+            LEFT JOIN ${DB_SCHEMA}."maxStageProbGms" msp ON msp.gauge = gauges.uuid
             WHERE gauges.code = $1`,
     values: [req.params.code]
   });
@@ -72,16 +76,20 @@ function getSingleGauge(req, res) {
             river: data.river,
             lat: data.lat,
             lon: data.lon,
-            meanAnnualAllPeriod_GMS: data.meanAnnualAllPeriod_GMS,
-            meanAnnualIceFree_GMS: data.meanAnnualIceFree_GMS,
-            p1_GMS: data.p1_GMS,
-            p3_GMS: data.p3_GMS,
-            p5_GMS: data.p5_GMS,
-            p10_GMS: data.p10_GMS,
-            p25_GMS: data.p25_GMS,
-            p50_GMS: data.p50_GMS,
-            maxStage: data.maxStage,
-            minStage: data.minStage,
+            meanAnnual_gms: {
+              allPeriod: data.meanAnnualAllPeriod_GMS,
+              iceFree: data.meanAnnualIceFree_GMS
+            },
+            probabilities_gms: [
+              {exc: 1, stage: data.p1_GMS},
+              {exc: 3, stage: data.p3_GMS},
+              {exc: 5, stage: data.p5_GMS},
+              {exc: 10, stage: data.p10_GMS},
+              {exc: 25, stage: data.p25_GMS},
+              {exc: 50, stage: data.p50_GMS}
+          ],
+            maxStage_calc: {date: data.maxDate, stage: Number(data.maxStage)},
+            minStage_calc: {date: data.minDate, stage: Number(data.minStage)},
             elevs: els
           });
         })
