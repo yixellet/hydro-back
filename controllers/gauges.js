@@ -76,20 +76,38 @@ function getSingleGauge(req, res) {
             river: data.river,
             lat: data.lat,
             lon: data.lon,
-            meanAnnual_gms: {
-              allPeriod: data.meanAnnualAllPeriod_GMS,
-              iceFree: data.meanAnnualIceFree_GMS
-            },
-            probabilities_gms: [
-              {exc: 1, stage: data.p1_GMS},
-              {exc: 3, stage: data.p3_GMS},
-              {exc: 5, stage: data.p5_GMS},
-              {exc: 10, stage: data.p10_GMS},
-              {exc: 25, stage: data.p25_GMS},
-              {exc: 50, stage: data.p50_GMS}
-          ],
-            maxStage_calc: {date: data.maxDate, stage: Number(data.maxStage)},
-            minStage_calc: {date: data.minDate, stage: Number(data.minStage)},
+            statistics: [
+              {
+                desc: 'среднемноголетний уровень (весь период)', 
+                stage: data.meanAnnualAllPeriod_GMS, 
+                source: 'ЦГМС'
+              },
+              {
+                desc: 'среднемноголетний уровень (безледный период)', 
+                stage: data.meanAnnualIceFree_GMS, 
+                source: 'ЦГМС'
+              },
+              {
+                desc: 'максимальный уровень',
+                date: data.maxDate,
+                stage: Number(data.maxStage), 
+                source: 'рассчитанное'
+              },
+              {
+                desc: 'минимальный уровень',
+                date: data.minDate,
+                stage: Number(data.minStage), 
+                source: 'рассчитанное'
+              }
+            ],
+            probabilities: [
+              {desc: '1%', stage: data.p1_GMS, source: 'ЦГМС'},
+              {desc: '3%', stage: data.p3_GMS, source: 'ЦГМС'},
+              {desc: '5%', stage: data.p5_GMS, source: 'ЦГМС'},
+              {desc: '10%', stage: data.p10_GMS, source: 'ЦГМС'},
+              {desc: '25%', stage: data.p25_GMS, source: 'ЦГМС'},
+              {desc: '50%', stage: data.p50_GMS, source: 'ЦГМС'}
+            ],
             elevs: els
           });
         })
