@@ -78,25 +78,25 @@ function getSingleGauge(req, res) {
             lon: data.lon,
             statistics: [
               {
-                desc: 'среднемноголетний уровень (весь период)', 
-                stage: data.meanAnnualAllPeriod_GMS, 
+                desc: 'среднемноголетний уровень (весь период)',
+                stage: data.meanAnnualAllPeriod_GMS,
                 source: 'ЦГМС'
               },
               {
-                desc: 'среднемноголетний уровень (безледный период)', 
-                stage: data.meanAnnualIceFree_GMS, 
+                desc: 'среднемноголетний уровень (безледный период)',
+                stage: data.meanAnnualIceFree_GMS,
                 source: 'ЦГМС'
               },
               {
                 desc: 'максимальный уровень',
                 date: data.maxDate,
-                stage: Number(data.maxStage), 
+                stage: Number(data.maxStage),
                 source: 'рассчитанное'
               },
               {
                 desc: 'минимальный уровень',
                 date: data.minDate,
-                stage: Number(data.minStage), 
+                stage: Number(data.minStage),
                 source: 'рассчитанное'
               }
             ],
@@ -119,7 +119,7 @@ function getSingleGauge(req, res) {
 
 function getFullYearObservations(req, res) {
   const obsQuery = new ParameterizedQuery({
-    text: `SELECT to_timestamp(to_char(date, 'YYYY-mm-DD'), 'YYYY-mm-DD') AT TIME ZONE 'Europe/Astrakhan' AS date,
+    text: `SELECT date,
                   stage,
                   props
            FROM ${DB_SCHEMA}."s${req.query.code}"\
