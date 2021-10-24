@@ -43,7 +43,7 @@ function getSingleGauge(req, res) {
                   msp."10p" AS "p10_GMS",
                   msp."25p" AS "p25_GMS",
                   msp."50p" AS "p50_GMS",
-                  maxst.date AS "maxDate",
+                  maxst.date AT TIME ZONE 'Europe/Astrakhan' AS "maxDate",
                   maxst.stage AS "maxStage",
                   minst.date AS "minDate",
                   minst.stage AS "minStage"
@@ -60,8 +60,8 @@ function getSingleGauge(req, res) {
     .then((data) => {
       const elevs = new ParameterizedQuery({
         text: `SELECT elev,
-                  to_timestamp(to_char(\"startDate\", 'YYYY-mm-DD'), 'YYYY-mm-DD') AT TIME ZONE 'Europe/Astrakhan' AS \"startDate\",
-                  to_timestamp(to_char(\"endDate\", 'YYYY-mm-DD'), 'YYYY-mm-DD') AT TIME ZONE 'Europe/Astrakhan' AS \"endDate\"
+               \"startDate\",
+               \"endDate\"
                FROM ${DB_SCHEMA}.\"ref_elevations\"
                WHERE \"gauge\" = $1
                ORDER BY \"startDate\" DESC`,
@@ -69,6 +69,7 @@ function getSingleGauge(req, res) {
       });
       db.any(elevs)
         .then((els) => {
+          console.log(els)
           res.send({
             uuid: data.uuid,
             code: data.code,
