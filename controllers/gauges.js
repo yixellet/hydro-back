@@ -69,7 +69,6 @@ function getSingleGauge(req, res) {
       });
       db.any(elevs)
         .then((els) => {
-          console.log(els)
           res.send({
             uuid: data.uuid,
             code: data.code,
@@ -120,12 +119,14 @@ function getSingleGauge(req, res) {
 
 function getFullYearObservations(req, res) {
   const obsQuery = new ParameterizedQuery({
-    text: `SELECT date,
-                  stage,
-                  props
-           FROM ${DB_SCHEMA}."s${req.query.code}"\
-           WHERE date_part(\'year\', "s${req.query.code}".date) \
-           = $1 ORDER BY \"s${req.query.code}\".date`,
+    text: `SELECT s.date AS date,
+                  s.stage AS stage,
+                  v.value AS value,
+                  s.props AS props,
+                  ${DB_SCHEMA}."getRefElev"(v.date, (SELECT uuid FROM ${DB_SCHEMA}.gauges WHERE gauges.code = ${req.query.code})) AS refel
+           FROM ${DB_SCHEMA}."s${req.query.code}" s, ${DB_SCHEMA}."v${req.query.code}" v \
+           WHERE v.date = s.date AND date_part(\'year\', s.date) = $1 \
+           ORDER BY date`,
     values: [req.query.year]
   });
 
@@ -143,6 +144,8 @@ function getFullYearObservations(req, res) {
         const newObs = {
           date: observation.date,
           stage: Number(observation.stage),
+          value: Number(observation.value),
+          refel: Number(observation.refel),
           props: []
         }
         observation.props.forEach((prop) => {
